@@ -49,8 +49,8 @@ class Drone:
 class Map:
     def __init__(self) -> None:
         self.hubs: dict[str, Hub] = {}
-        self.start_hub = Hub | None 
-        self.end_hub = Hub | None
+        self.start_hub: Hub | None = None
+        self.end_hub: Hub | None = None
     
     def add_hub(self, hub: Hub):
         self.hubs[hub.name] = hub
