@@ -114,6 +114,6 @@ def parse_file(filepath: str) -> Tuple[Map, list[Drone]]:
         name = f"D{i}"
         drone = Drone(name, i, map.start_hub)
         drones_list.append(drone)
-        map.start_hub.accept_drone(drone)
+        map.start_hub.accept_drone(drone.drone_id)
 
     return map, drones_list

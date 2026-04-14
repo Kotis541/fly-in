@@ -1,4 +1,7 @@
 from parser import parse_file
+from engine import Engine
+
+
 def test_parser():
     """Testuje parse_file na test.txt"""
     try:
@@ -33,5 +36,17 @@ def test_parser():
     print("✓ Connections mapovány správně")
     
     print("\n✅ Všechny testy prošly!")
+
+    print("=== TEST ENGINE === ")
+
+map_obj, drones = parse_file("test.txt")
+engine = Engine(map_obj, drones)
+log = engine.run_all()
+
+for line in log:
+    print(line)
+
+print(f"\nHotovo za {engine.turn} tahů")
+
 if __name__ == "__main__":
     test_parser()

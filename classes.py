@@ -12,8 +12,8 @@ class Connection:
             self.connection.append(id)
             return True
         return False
-    
-    def realease_drone(self, id: int) -> None:
+
+    def release_drone(self, id: int) -> None:
         self.connection.remove(id)
 
 class Hub:
@@ -44,6 +44,10 @@ class Drone:
         self.name = name
         self.drone_id = drone_id
         self.location = location
+        self.path: str = None
+        self.path_index = 0
+        self.turns_left = 0
+        self.delivered = False
 
 
 class Map:
@@ -54,7 +58,3 @@ class Map:
     
     def add_hub(self, hub: Hub):
         self.hubs[hub.name] = hub
-
-
-class Engine:
-    pass
