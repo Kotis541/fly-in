@@ -1,5 +1,6 @@
 from parser import parse_file
 from engine import Engine
+from visualitzation import visualization
 
 
 def test_parser():
@@ -39,15 +40,17 @@ def test_parser():
 
     print("=== TEST ENGINE === ")
 
-    map_obj, drones = parse_file("test.txt")
+    map_obj, drones = parse_file("maps/easy/01_linear_path.txt")
     engine = Engine(map_obj, drones)
     log = engine.run_simulation()
     for line in log:
         print(line)
     print(f"Hotovo za {engine.turn} tahů")
+    visualization(map_obj)
 
     for d in engine.drones:
         print(d.name, [h.name for h in d.path])
+    
 
 if __name__ == "__main__":
     test_parser()
