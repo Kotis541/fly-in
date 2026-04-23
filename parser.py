@@ -109,6 +109,10 @@ def parse_file(filepath: str) -> Tuple[Map, list[Drone]]:
 
     if nb_drones <= 0:
         raise ValueError(f"[ERROR - PARSER]: Invalid number of drones ({nb_drones})")
+    
+    map.start_hub.capacity = float('inf')
+    map.end_hub.capacity = float('inf')
+
     drones_list = []
     for i in range(1, nb_drones + 1):
         name = f"D{i}"

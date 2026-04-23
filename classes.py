@@ -14,7 +14,8 @@ class Connection:
         return False
 
     def release_drone(self, id: int) -> None:
-        self.connection.remove(id)
+        if id in self.connection:
+            self.connection.remove(id)
 
 class Hub:
     def __init__(self, name: str, z_type: str, capacity: 1, x: int, y: int) -> None:
@@ -33,7 +34,8 @@ class Hub:
         return False
 
     def release_drone(self, id: int) -> None:
-        self.drones.remove(id)
+        if id in self.drones:
+            self.drones.remove(id)
     
     def add_connection(self, connection: Connection):
         self.connections.append(connection)
@@ -44,10 +46,16 @@ class Drone:
         self.name = name
         self.drone_id = drone_id
         self.location = location
-        self.path: str = None
+        self.path: list[Hub] = []
         self.path_index = 0
         self.turns_left = 0
         self.delivered = False
+        self.in_transit = False
+        self.transit_target = None
+        self.turns_in_transit = 0 # Opraven překlep: používá se 'turns_in_transit' v engine.py
+    
+    def is_flying(self) -> bool:
+        return isinstance(self.location, Connection)
 
 
 class Map:

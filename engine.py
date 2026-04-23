@@ -1,90 +1,136 @@
 from classes import *
 
 class Engine:
-    def __init__(self, map: Map, drones: list[Drone]):
-        self.map = map
+    def __init__(self, map_obj: Map, drones: list[Drone]):
+        self.map_obj = map_obj
         self.drones = drones
         self.turn = 0
         self.log = []
+
+        if self.map_obj.start_hub:
+            self.map_obj.start_hub.capacity = float("inf")
+        if self.map_obj.end_hub:
+            self.map_obj.end_hub.capacity = float("inf")
     
     def find_path(self, start: Hub, end: Hub) -> list[Hub]:
-        queue = [[start]]
-        visited = {start}
+        distances = {}
+        visited = set()
+        parents = {}
+        
+        for hub in self.map_obj.hubs.values():
+            distances[hub] = float("inf")
+        distances[start] = 0
 
-        while len(queue) > 0:
-            current_path = queue.pop(0)
-            current_hub = current_path[-1]
+        while len(visited) < len(self.map_obj.hubs):
+            current = None
+            min_dist = float("inf")
 
-            if current_hub == end:
-                return current_path
-            for n in current_hub.connections:
-                    if n.node_a == current_hub:
-                        neighbor = n.node_b
-                    else:
-                        neighbor = n.node_a
-                    if neighbor in visited:
-                        continue
+            for hub in self.map_obj.hubs.values():
+                if hub not in visited and distances[hub] < min_dist:
+                    current = hub
+                    min_dist = distances[hub]
+            if current is None or current == end:
+                break
+        
+            for connection in current.connections:
+                neighbor = connection.node_b if connection.node_a == current else connection.node_a
+
+                if neighbor not in visited:
                     if neighbor.z_type == "blocked":
                         continue
-                    visited.add(neighbor)
-                    queue.append(current_path + [neighbor])
-        return []
 
+                    cost = self.get_zone_cost(neighbor)
+                    new_dist = distances[current] + cost
 
-    def assign_paths(self):
-        start = self.map.start_hub
-        end = self.map.end_hub
-        for drone in self.drones:
-            drone.path = self.find_path(start, end)
-            if drone.path == None:
-                raise ValueError("[ENGINE ERROR]: Connetion doesn't exist!")
-            drone.path_index = 1
-
-
-    def run_turn(self) -> str:
-        intensions = {}
-        for drone in self.drones:
-            if drone.delivered is False:
-                if drone.path_index >= len(drone.path):
-                    drone.delivered = True
-                    continue
-                target_hub = drone.path[drone.path_index]
-                intensions[drone] = target_hub
-
-        hub_intensions = {}
-        for drone, hub in intensions.items():
-            if hub not in hub_intensions:
-                hub_intensions[hub] = []
-            hub_intensions[hub].append(drone)
-        
-        approved = {}
-        for hub, drones_list in hub_intensions.items():
-            free_space = hub.capacity - len(hub.drones)
-            
-            for drone in drones_list[:free_space]:
-                approved[drone] = hub
-        
-        for drone, target_hub in approved.items():
-            if target_hub.accept_drone(drone.drone_id):
-                if drone.drone_id in drone.location.drones:
-                    drone.location.release_drone(drone.drone_id)
+                    if new_dist < distances[neighbor]:
+                        distances[neighbor] = new_dist
+                        parents[neighbor] = current
                 
-                drone.location = target_hub
-                drone.path_index += 1
-            
-                if target_hub == self.map.end_hub:
-                    drone.delivered = True
+            visited.add(current)
+    
+        path = []
+        current = end
+        while current is not None:
+            path.append(current)
+            current = parents.get(current)
         
-        self.turn += 1
-        moves = [f"{drone.name}-{hub.name}" for drone, hub in approved.items()]
-        log_msg = " ".join(moves)
-        self.log.append(log_msg)
+        path.reverse()
+        return path
 
-    def run_all(self) -> list[str]:
-        self.assign_paths()
-        max_turns = 100
-        while not all(drone.delivered for drone in self.drones) and self.turn < max_turns:
-            self.run_turn()
-        if self.turn >= max_turns:
-            print(f"[WARNING] Dosáhli jsme limitu {max_turns} tahů!")
+    def get_zone_cost(self, hub: Hub) -> int:
+        if hub.z_type == "restricted":
+            return 2
+        elif hub.z_type == "blocked":
+            return float("inf")
+        else:
+            return 1
+    
+    def find_conn(self, hub_a: Hub, hub_b: Hub) -> Connection:
+        for conn in hub_a.connections:
+            if (conn.node_a == hub_a and conn.node_b == hub_b) or \
+               (conn.node_a == hub_b and conn.node_b == hub_a):
+                return conn
+        raise ValueError(f"Empty connection between {hub_a.name} and {hub_b.name}")
+
+    def run_simulation(self) -> list[str]:
+        for drone in self.drones:
+            drone.path = self.find_path(self.map_obj.start_hub, self.map_obj.end_hub)
+
+        while not all(drone.delivered for drone in self.drones):
+            approved = []
+            moves_this_turn = []
+
+            for drone in self.drones:
+                if drone.delivered:
+                    continue
+
+
+                if drone.path_index + 1 < len(drone.path):
+                    next_hub = drone.path[drone.path_index + 1]
+                    approved.append((drone, next_hub))
+
+                else:
+                    drone.delivered = True
+            
+            for drone, next_hub in approved:
+                current_hub = drone.path[drone.path_index]
+                connection = self.find_conn(current_hub, next_hub)
+
+                if drone.in_transit:
+                    drone.turns_in_transit -= 1
+                    if drone.turns_in_transit <= 0:
+                        # Musí TEĎKA dorazit!
+                        if len(next_hub.drones) < next_hub.capacity:  # Musí se vejít!
+                            next_hub.accept_drone(drone.drone_id)
+                            drone.path_index += 1
+                            drone.location = drone.path[drone.path_index]
+                            drone.in_transit = False
+                            connection.release_drone(drone.drone_id)
+                        else:
+                            drone.turns_in_transit = 0 # Hub je plný, dron musí počkat
+                else:
+                    if len(next_hub.drones) < next_hub.capacity and \
+                        len(connection.connection) < connection.max_link_capacity:
+                        
+                        if next_hub.z_type == "restricted":
+                            # ZAHÁJIT TRANZIT - nepohybovat se ještě!
+                            current_hub.release_drone(drone.drone_id)
+                            connection.accept_drone(drone.drone_id)
+                            drone.in_transit = True
+                            drone.turns_in_transit = 2  # Zbývají 2 turny
+                            drone.transit_target = next_hub
+                            moves_this_turn.append(f"{drone.name}-{next_hub.name}")
+                        else:
+                            # Normální pohyb
+                            current_hub.release_drone(drone.drone_id)
+                            next_hub.accept_drone(drone.drone_id)
+                            connection.accept_drone(drone.drone_id)
+                            drone.path_index += 1
+                            drone.location = drone.path[drone.path_index]
+                            moves_this_turn.append(f"{drone.name}-{next_hub.name}")
+                            connection.release_drone(drone.drone_id)
+            if moves_this_turn:
+                self.log.append(" ".join(moves_this_turn))
+
+            self.turn += 1
         return self.log
