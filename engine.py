@@ -137,7 +137,7 @@ class Engine:
             self.turn += 1
         return self.log
 
-    def coord_scale(self, hub_x: int, hub_y: int, screen_w: int, screen_h: int, padding=50):
+    def coord_scale(self, hub_x: int, hub_y: int, screen_w: int, screen_h: int, padding=60):
         min_x = min(hub.x for hub in self.map_obj.hubs.values())
         max_x = max(hub.x for hub in self.map_obj.hubs.values())
         min_y = min(hub.y for hub in self.map_obj.hubs.values())
