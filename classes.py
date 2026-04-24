@@ -18,12 +18,13 @@ class Connection:
             self.connection.remove(id)
 
 class Hub:
-    def __init__(self, name: str, z_type: str, capacity: 1, x: int, y: int) -> None:
+    def __init__(self, name: str, z_type: str, capacity: 1, x: int, y: int, color: str) -> None:
         self.name = name
         self.z_type = z_type
         self.capacity = capacity
         self.x = x
         self.y = y
+        self.color = color
         self.connections: list[Connection] = []
         self.drones = []
 

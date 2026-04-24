@@ -6,6 +6,7 @@ class Engine:
         self.drones = drones
         self.turn = 0
         self.log = []
+        self.visual_log = []
 
         if self.map_obj.start_hub:
             self.map_obj.start_hub.capacity = float("inf")
@@ -131,6 +132,31 @@ class Engine:
                             connection.release_drone(drone.drone_id)
             if moves_this_turn:
                 self.log.append(" ".join(moves_this_turn))
+            self.visual_log.append(" ".join(moves_this_turn))
 
             self.turn += 1
         return self.log
+
+    def coord_scale(self, hub_x: int, hub_y: int, screen_w: int, screen_h: int, padding=50):
+        min_x = min(hub.x for hub in self.map_obj.hubs.values())
+        max_x = max(hub.x for hub in self.map_obj.hubs.values())
+        min_y = min(hub.y for hub in self.map_obj.hubs.values())
+        max_y = max(hub.y for hub in self.map_obj.hubs.values())
+
+        data_width = max_x - min_x
+        data_height = max_y - min_y
+
+        if data_width == 0: data_width = 1
+        if data_height == 0: data_height = 1
+
+
+        drawable_width = screen_w - (2 * padding)
+        drawable_height = screen_h - (2 * padding)
+
+        scale_x = drawable_width / data_width
+        scale_y = drawable_height / data_height
+
+        final_x = padding + ((hub_x - min_x) * scale_x)
+        final_y = padding + ((hub_y - min_y) * scale_y)
+
+        return int(final_x), int(final_y)

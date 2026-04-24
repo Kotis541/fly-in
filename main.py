@@ -40,13 +40,13 @@ def test_parser():
 
     print("=== TEST ENGINE === ")
 
-    map_obj, drones = parse_file("maps/easy/01_linear_path.txt")
+    map_obj, drones = parse_file("maps/hard/01_maze_nightmare.txt")
     engine = Engine(map_obj, drones)
     log = engine.run_simulation()
     for line in log:
         print(line)
     print(f"Hotovo za {engine.turn} tahů")
-    visualization(map_obj)
+    visualization(map_obj, engine)
 
     for d in engine.drones:
         print(d.name, [h.name for h in d.path])

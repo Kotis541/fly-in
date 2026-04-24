@@ -65,12 +65,13 @@ def parse_file(filepath: str) -> Tuple[Map, list[Drone]]:
 
                     capacity = int(meta_dict.get("max_drones", 1))
                     z_type = meta_dict.get("zone", "normal")
+                    color = meta_dict.get("color", None)
                 except ValueError as e:
                     raise ValueError(e)
                 if z_type not in valid_zone:
                     raise ValueError("[ERROR - PARSER]: Invalid zone!")
 
-                hub = Hub(name=name, z_type=z_type, x=x, y=y, capacity=capacity)
+                hub = Hub(name=name, z_type=z_type, x=x, y=y, capacity=capacity, color=color)
                 map.add_hub(hub)
 
                 if line.startswith("start_hub:"):
