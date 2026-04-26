@@ -4,7 +4,8 @@ NAME = main.py
 all: run
 
 install:
-	pip install flake8 mypy
+	python -m pip install
+	python -m pip install mypy pygame
 
 run:
 	$(PYTHON) $(NAME)
@@ -13,7 +14,7 @@ debug:
 	$(PYTHON) -m pdb $(NAME)
 
 clean:
-	rm -rf __pycache__ .mypy_cache
+	rm -rf Backend/__pycache__ Frontend/__pycache__ .mypy_cache
 
 lint:
 	$(PYTHON) -m flake8 . --exclude=env
@@ -23,6 +24,6 @@ lint:
 	--warn-unused-ignores \
 	--ignore-missing-imports \
 	--disallow-untyped-defs \
-	-check-untyped-defs
+	--check-untyped-defs
 
 .PHONY: all install run debug lint clean
