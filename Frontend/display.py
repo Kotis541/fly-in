@@ -11,7 +11,6 @@ from typing import Any
 pygame.init()
 
 WHITE = (255, 255, 255)
-GREEN = (126, 217, 87)
 ANIMATION_SPEED = 0.016
 
 
@@ -31,7 +30,6 @@ class Visualizer:
         self.screen = self._create_screen()
 
         # Load drone image
-        import os
         script_dir = os.path.dirname(os.path.abspath(__file__))
         try:
             icon_path = os.path.join(script_dir, "image/drone.png")
@@ -152,7 +150,7 @@ class Visualizer:
         moves = self.engine.visual_log[self.current_turn].split()
         moved_drones = {}
         for m in moves:
-            d_name, h_name = m.split("-")
+            d_name, h_name = m.split("-", 1)
             moved_drones[d_name] = h_name
 
         for d_name in self.visual_drones:
@@ -223,7 +221,7 @@ class Visualizer:
     def _draw_connections(self, screen_w: int, screen_h: int) -> None:
         """Renders the connection lines between hubs."""
         drawn_connections = set()
-        for hub_name, hub in self.map.hubs.items():
+        for hub in self.map.hubs.values():
             for conn in hub.connections:
                 conn_names = (conn.node_a.name, conn.node_b.name)
                 conn_id = tuple(sorted(conn_names))

@@ -11,6 +11,8 @@ class Parser:
             raise ValueError("[ERROR - PARSER]: "
                              f"Invalid hub coordinates ({line})")
         name = parts[1]
+        if "-" in name:
+            raise ValueError(f"Zone names cannot contain dashes ('{name}')")
         try:
             x = int(parts[2])
             y = int(parts[3])
@@ -98,9 +100,9 @@ class Parser:
                         z_type = meta_dict.get("zone", "normal")
                         color = meta_dict.get("color", None)
                     except ValueError as e:
-                        raise ValueError(e)
+                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: {e}")
                     if z_type not in valid_zone:
-                        raise ValueError("[ERROR - PARSER]: Invalid zone!")
+                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: Invalid zone!")
 
                     hub = Hub(name=name, z_type=z_type, x=x, y=y,
                             capacity=capacity, color=color)
@@ -108,12 +110,12 @@ class Parser:
 
                     if line.startswith("start_hub:"):
                         if map_obj.start_hub is not None:
-                            raise ValueError("[ERROR - PARSER]: "
+                            raise ValueError(f"[ERROR - PARSER] Line {line_num}: "
                                              "map_obj cant have more than 1 start!")
                         map_obj.start_hub = hub
                     elif line.startswith("end_hub:"):
                         if map_obj.end_hub is not None:
-                            raise ValueError("[ERROR - PARSER]: "
+                            raise ValueError(f"[ERROR - PARSER] Line {line_num}: "
                                              "map_obj cant have more than 1 end!")
                         map_obj.end_hub = hub
 
@@ -122,22 +124,24 @@ class Parser:
                         meta_dict = Parser.parse_metadata(line, "connection")
                         parts = line.split()
                     except ValueError as e:
-                        raise ValueError(e)
+                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: {e}")
 
                     a, b = parts[1].split("-")
                     capacity = int(meta_dict.get("max_link_capacity", 1))
                     if capacity <= 0:
-                        raise ValueError("[ERROR - PARSER]: max_drones must be positive")
+                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: "
+                                         "max_link_capacity must be positive")
                     if a not in map_obj.hubs or b not in map_obj.hubs:
-                        raise ValueError("[ERROR - PARSER]:"
+                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: "
                                          "Connection references unknown hub: "
                                          f"{a} or {b}")
                     if a == b:
-                        raise ValueError("[ERROR - PARSER]: "
+                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: "
                                          f"Node {a} can't connect to itself")
                     conn_key = frozenset([a, b])
                     if conn_key in seen_connection:
-                        raise ValueError(f"[ERROR - PARSER]: Duplicate connection between {a} and {b}")
+                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: "
+                                         f"Duplicate connection between {a} and {b}")
                     seen_connection.add(conn_key)
                     node_a = map_obj.hubs[a]
                     node_b = map_obj.hubs[b]

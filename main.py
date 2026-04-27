@@ -15,10 +15,13 @@ def main() -> None:
     try:
         map_obj, drones = Parser.parse_file(sys.argv[1])
         engine = Engine(map_obj, drones)
+        log = engine.run_simulation()
     except (FileNotFoundError, ValueError, RuntimeError) as e:
         print(e)
         exit(1)
-    log = engine.run_simulation()
+    except Exception as e:
+        print(f"[FATAL ERROR]: An unexpected failure occurred: {e}")
+        exit(1)
     for line in log:
         print(line)
     try:

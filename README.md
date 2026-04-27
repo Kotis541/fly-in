@@ -1,6 +1,6 @@
-# Fly-In - Drone Routing Simulation
-
 *This project has been created as part of the 42 curriculum by vokotera.*
+
+# Fly-In - Drone Routing Simulation
 
 ## Description
  This project, is a drone routing simulation dessigned to navigate drones from a starting hub to ending hub through a network of connected zones. The primary goal is to minimize total number of simulation turns and respect capacity of hubs and connections.
@@ -41,11 +41,16 @@ connection: C-D [max_link_capacity=3]
 - Connections: max_link_capacity
 
 ## Algorithm and Implementation
-Uses Dijkstra's Algorithm to compute shortest weighted paths:
+Uses a combination of Dijkstra's Algorithm and Depth-First Search (DFS) for optimal pathfinding and load-balancing:
 
 - Normal zones: cost = 1
 - Restricted zones: cost = 2
+- Priority zones: cost = 0.9 (preferred in tie-breakers)
 - Blocked zones: cost = ∞
+
+1. **Shortest Distance Calculation:** Dijkstra's algorithm computes the absolute shortest distance to the destination.
+2. **Multi-Path Extraction:** DFS extracts *all* possible routes that match this exact optimal distance.
+3. **Congestion Prevention:** Drones are distributed across all these optimal paths using a Round-Robin assignment, maximizing throughput and preventing infinite queues.
 
 A drone only takes a step forward if there is physical capacity on both the connection and the destination zone. If the path is blocked, the drone safely waits in its current hub and skips a turn.
 

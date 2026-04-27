@@ -18,53 +18,6 @@ class Engine:
         if self.map_obj.end_hub:
             self.map_obj.end_hub.capacity = float("inf")
 
-    def find_path(self, start: Hub, end: Hub) -> list[Hub]:
-        """Finds and returns the shortest path between the start and end."""
-        distances = {}
-        visited: set[Hub] = set()
-        parents = {}
-
-        for hub in self.map_obj.hubs.values():
-            distances[hub] = float("inf")
-        distances[start] = 0
-
-        while len(visited) < len(self.map_obj.hubs):
-            current = None
-            min_dist = float("inf")
-
-            for hub in self.map_obj.hubs.values():
-                if hub not in visited and distances[hub] < min_dist:
-                    current = hub
-                    min_dist = distances[hub]
-            if current is None or current == end:
-                break
-
-            for connection in current.connections:
-                neighbor = (connection.node_b if connection.node_a == current
-                            else connection.node_a)
-
-                if neighbor not in visited:
-                    if neighbor.z_type == "blocked":
-                        continue
-
-                    cost = self.get_zone_cost(neighbor)
-                    new_dist = distances[current] + cost
-
-                    if new_dist < distances[neighbor]:
-                        distances[neighbor] = new_dist
-                        parents[neighbor] = current
-
-            visited.add(current)
-
-        path = []
-        current = end
-        while current is not None:
-            path.append(current)
-            current = parents.get(current)
-
-        path.reverse()
-        return path
-
     def find_all_shortest_paths(self, start: Hub, end: Hub) -> list[list[Hub]]:
         """Finds all shortest paths between start and end using Dijkstra
         to determine distance, then DFS to enumerate all paths of that length.
