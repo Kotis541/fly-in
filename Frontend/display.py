@@ -175,7 +175,7 @@ class Visualizer:
         pygame.display.flip()
 
     def _draw_buttons(self, mouse_pos: tuple[int, int]) -> None:
-        """Draws the control buttons (STEP, AUTO, RESET)."""
+        """Draws the control buttons."""
         rect_step = pygame.Rect(10, 10, 80, 30)
         rect_auto = pygame.Rect(100, 10, 80, 30)
         rect_reset = pygame.Rect(190, 10, 80, 30)

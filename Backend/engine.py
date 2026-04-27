@@ -58,7 +58,9 @@ class Engine:
         all_paths = []
 
         def dfs(current: Hub, target: Hub, path: list[Hub]) -> None:
-            """This is a function signature for a Depth-First Search (DFS) algorithm"""
+            """
+            This is a function signature for a Depth-First Search algorithm
+            """
             if current == target:
                 all_paths.append(path[:])
                 return
