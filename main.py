@@ -30,5 +30,6 @@ def main() -> None:
     except KeyboardInterrupt:
         print("Thanks for using Fly - in")
 
+
 if __name__ == "__main__":
     main()

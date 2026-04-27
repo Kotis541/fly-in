@@ -85,38 +85,49 @@ class Parser:
                             f"nb_drones must be positive"
                         )
                     nb_drones_found = True
-                    continue                
+                    continue
 
                 elif line.startswith(("start_hub:", "end_hub:", "hub:")):
                     valid_zone = ["normal", "blocked",
-                                "restricted", "priority"]
+                                  "restricted", "priority"]
                     try:
                         name, x, y = Parser.extract_hub_coords(line)
                         meta_dict = Parser.parse_metadata(line, "hub")
 
                         capacity = int(meta_dict.get("max_drones", 1))
                         if capacity <= 0:
-                            raise ValueError("[ERROR - PARSER]: max_drones must be positive")
+                            raise ValueError(
+                                "[ERROR - PARSER]: max_drones must be positive"
+                            )
                         z_type = meta_dict.get("zone", "normal")
                         color = meta_dict.get("color", None)
                     except ValueError as e:
-                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: {e}")
+                        raise ValueError(
+                            f"[ERROR - PARSER] Line {line_num}: {e}"
+                        )
                     if z_type not in valid_zone:
-                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: Invalid zone!")
+                        raise ValueError(
+                            f"[ERROR - PARSER] Line {line_num}: "
+                            "Invalid zone!"
+                        )
 
                     hub = Hub(name=name, z_type=z_type, x=x, y=y,
-                            capacity=capacity, color=color)
+                              capacity=capacity, color=color)
                     map_obj.add_hub(hub)
 
                     if line.startswith("start_hub:"):
                         if map_obj.start_hub is not None:
-                            raise ValueError(f"[ERROR - PARSER] Line {line_num}: "
-                                             "map_obj cant have more than 1 start!")
+                            raise ValueError(
+                                f"[ERROR - PARSER] Line {line_num}: "
+                                "map_obj cant have more than 1 start!"
+                            )
                         map_obj.start_hub = hub
                     elif line.startswith("end_hub:"):
                         if map_obj.end_hub is not None:
-                            raise ValueError(f"[ERROR - PARSER] Line {line_num}: "
-                                             "map_obj cant have more than 1 end!")
+                            raise ValueError(
+                                f"[ERROR - PARSER] Line {line_num}: "
+                                "map_obj cant have more than 1 end!"
+                            )
                         map_obj.end_hub = hub
 
                 elif line.startswith("connection:"):
@@ -124,9 +135,17 @@ class Parser:
                         meta_dict = Parser.parse_metadata(line, "connection")
                         parts = line.split()
                     except ValueError as e:
-                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: {e}")
+                        raise ValueError(
+                            f"[ERROR - PARSER] Line {line_num}: {e}"
+                        )
 
-                    a, b = parts[1].split("-")
+                    conn_parts = parts[1].split("-")
+                    if len(conn_parts) != 2:
+                        raise ValueError(
+                            f"[ERROR - PARSER] Line {line_num}: "
+                            f"Invalid connection format '{parts[1]}'"
+                        )
+                    a, b = conn_parts
                     capacity = int(meta_dict.get("max_link_capacity", 1))
                     if capacity <= 0:
                         raise ValueError(f"[ERROR - PARSER] Line {line_num}: "
@@ -140,8 +159,10 @@ class Parser:
                                          f"Node {a} can't connect to itself")
                     conn_key = frozenset([a, b])
                     if conn_key in seen_connection:
-                        raise ValueError(f"[ERROR - PARSER] Line {line_num}: "
-                                         f"Duplicate connection between {a} and {b}")
+                        raise ValueError(
+                            f"[ERROR - PARSER] Line {line_num}: "
+                            f"Duplicate connection between {a} and {b}"
+                        )
                     seen_connection.add(conn_key)
                     node_a = map_obj.hubs[a]
                     node_b = map_obj.hubs[b]

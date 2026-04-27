@@ -1,11 +1,9 @@
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-
-import pygame
-from Backend.graph import Map
-from Backend.engine import Engine
-from typing import Any
-
+import pygame  # noqa: E402
+from Backend.graph import Map  # noqa: E402
+from Backend.engine import Engine  # noqa: E402
+from typing import Any  # noqa: E402
 
 
 pygame.init()
@@ -22,7 +20,7 @@ class Visualizer:
         """Initializes the Pygame visualizer with the map and simulation
         engine.
         """
-        self.map = map
+        self.map_obj = map
         self.engine = engine
 
         # Pygame setup
@@ -58,8 +56,8 @@ class Visualizer:
         """Creates and returns the Pygame display surface based on map
         dimensions.
         """
-        req_w = len(self.map.hubs) * 120
-        req_h = len(self.map.hubs) * 50
+        req_w = len(self.map_obj.hubs) * 120
+        req_h = len(self.map_obj.hubs) * 50
         win_w = self.info.current_w
         win_h = self.info.current_h
 
@@ -71,15 +69,15 @@ class Visualizer:
         """Sets up the initial visual state and target nodes for all drones."""
         for drone_ in self.engine.drones:
             self.visual_drones[drone_.name] = {
-                'current_node': self.map.start_hub,
-                'target_node': self.map.start_hub
+                'current_node': self.map_obj.start_hub,
+                'target_node': self.map_obj.start_hub
             }
         if len(self.engine.visual_log) > 0:
             for move in self.engine.visual_log[0].split():
                 parts = move.split("-", 1)
                 d_name, h_name = parts[0], parts[1]
                 self.visual_drones[d_name]['target_node'] = \
-                    self.map.hubs[h_name]
+                    self.map_obj.hubs[h_name]
 
     def run(self) -> None:
         """Starts the main Pygame event and rendering loop."""
@@ -155,7 +153,7 @@ class Visualizer:
 
         for d_name in self.visual_drones:
             if d_name in moved_drones:
-                target = self.map.hubs[moved_drones[d_name]]
+                target = self.map_obj.hubs[moved_drones[d_name]]
                 self.visual_drones[d_name]['target_node'] = target
             else:
                 curr = self.visual_drones[d_name]['current_node']
@@ -221,7 +219,7 @@ class Visualizer:
     def _draw_connections(self, screen_w: int, screen_h: int) -> None:
         """Renders the connection lines between hubs."""
         drawn_connections = set()
-        for hub in self.map.hubs.values():
+        for hub in self.map_obj.hubs.values():
             for conn in hub.connections:
                 conn_names = (conn.node_a.name, conn.node_b.name)
                 conn_id = tuple(sorted(conn_names))
@@ -236,14 +234,17 @@ class Visualizer:
 
     def _draw_hubs(self, screen_w: int, screen_h: int) -> None:
         """Draws the map hubs and their names."""
-        for hub in self.map.hubs:
-            hub_obj = self.map.hubs[hub]
+        for hub in self.map_obj.hubs:
+            hub_obj = self.map_obj.hubs[hub]
             x, y = self.engine.coord_scale(
                 hub_obj.x, hub_obj.y, screen_w, screen_h)
             try:
-                color = pygame.Color(hub_obj.color) if hub_obj.color else (0, 150, 255)
+                if hub_obj.color:
+                    color = pygame.Color(hub_obj.color)
+                else:
+                    color = pygame.Color(0, 150, 255)
             except ValueError:
-                color = (0, 150, 255)
+                color = pygame.Color(0, 150, 255)
             pygame.draw.circle(self.screen, color, (x, y), 20, 0)
             name = self.font.render(hub, True, (0, 0, 0))
             self.screen.blit(name, (x + 20, y + 10))

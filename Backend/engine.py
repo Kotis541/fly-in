@@ -27,51 +27,54 @@ class Engine:
         for hub in self.map_obj.hubs.values():
             distances[hub] = float("inf")
         distances[start] = 0
-        
+
         while len(visited) < len(self.map_obj.hubs):
             current = None
             min_dist = float("inf")
-            
+
             for hub in self.map_obj.hubs.values():
                 if hub not in visited and distances[hub] < min_dist:
                     current = hub
                     min_dist = distances[hub]
             if current is None or current == end:
                 break
-            
+
             for connection in current.connections:
                 neighbor = (connection.node_b if connection.node_a == current
-                           else connection.node_a)
+                            else connection.node_a)
                 if neighbor not in visited and neighbor.z_type != "blocked":
                     cost = self.get_zone_cost(neighbor)
                     new_dist = distances[current] + cost
                     if new_dist < distances[neighbor]:
                         distances[neighbor] = new_dist
             visited.add(current)
-        
+
         shortest_distance = distances[end]
         if shortest_distance == float("inf"):
             raise RuntimeError(
                 f"[ERROR - ENGINE]: No path from {start.name} to {end.name}!"
             )
-        
+
         all_paths = []
-        
+
         def dfs(current: Hub, target: Hub, path: list[Hub]) -> None:
+            """This is a function signature for a Depth-First Search (DFS) algorithm"""
             if current == target:
                 all_paths.append(path[:])
                 return
-            
+
             for connection in current.connections:
                 neighbor = (connection.node_b if connection.node_a == current
-                           else connection.node_a)
+                            else connection.node_a)
                 if neighbor.z_type != "blocked":
                     edge_cost = self.get_zone_cost(neighbor)
-                    if abs(distances[current] + edge_cost - distances[neighbor]) < 1e-6:
+                    if (abs(distances[current] +
+                            edge_cost -
+                            distances[neighbor]) < 1e-6):
                         path.append(neighbor)
                         dfs(neighbor, target, path)
                         path.pop()
-        
+
         dfs(start, end, [start])
         if not all_paths:
             raise RuntimeError(
@@ -119,7 +122,8 @@ class Engine:
                 if drone.delivered:
                     continue
 
-                if drone.location == self.map_obj.end_hub and not drone.in_transit:
+                if (drone.location == self.map_obj.end_hub and
+                        not drone.in_transit):
                     drone.delivered = True
                     continue
 
@@ -148,19 +152,23 @@ class Engine:
                             drone.in_transit = False
                             drone.transit_target = None
                             connection.release_drone(drone.drone_id)
-                            moves_this_turn.append(f"{drone.name}-{next_hub.name}")
-                            visual_moves_this_turn.append(f"{drone.name}-{next_hub.name}")
+                            moves_this_turn.append(
+                                f"{drone.name}-{next_hub.name}")
+                            visual_moves_this_turn.append(
+                                f"{drone.name}-{next_hub.name}")
                         else:
                             raise RuntimeError(
-                                f"[ERROR - ENGINE]: Drone {drone.name} is forced to wait "
-                                f"on connection {connection.name}, violating spec!"
+                                f"[ERROR - ENGINE]: Drone {drone.name} is "
+                                f"forced to wait on connection "
+                                f"{connection.name}, violating spec!"
                             )
                 else:
                     incoming = sum(
-                        1 for d in self.drones 
-                        if d.in_transit 
+                        1 for d in self.drones
+                        if d.in_transit
                         and d.transit_target == next_hub
-                        and d.turns_in_transit == 1 and d.drone_id not in processed_drones
+                        and d.turns_in_transit == 1
+                        and d.drone_id not in processed_drones
                     )
                     if (len(next_hub.drones) + incoming < next_hub.capacity and
                        len(connection.connection) <
@@ -172,8 +180,10 @@ class Engine:
                             drone.in_transit = True
                             drone.turns_in_transit = 1
                             drone.transit_target = next_hub
-                            moves_this_turn.append(f"{drone.name}-{connection.name}")
-                            visual_moves_this_turn.append(f"{drone.name}-{next_hub.name}")
+                            moves_this_turn.append(
+                                f"{drone.name}-{connection.name}")
+                            visual_moves_this_turn.append(
+                                f"{drone.name}-{next_hub.name}")
                         else:
                             # Normální pohyb
                             current_hub.release_drone(drone.drone_id)
@@ -185,7 +195,8 @@ class Engine:
                                                    f"-{next_hub.name}")
                             visual_moves_this_turn.append(f"{drone.name}"
                                                           f"-{next_hub.name}")
-                            connections_to_release.append((connection, drone.drone_id))
+                            connections_to_release.append(
+                                (connection, drone.drone_id))
 
                 processed_drones.add(drone.drone_id)
 
@@ -197,8 +208,10 @@ class Engine:
                 self.visual_log.append(" ".join(visual_moves_this_turn))
 
             self.turn += 1
-            if not moves_this_turn and not any(d.in_transit for d in self.drones):
-                raise RuntimeError("[ERROR - ENGINE]: Simulation deadlock detected!")
+            if (not moves_this_turn and
+                    not any(d.in_transit for d in self.drones)):
+                raise RuntimeError(
+                    "[ERROR - ENGINE]: Simulation deadlock detected!")
 
         return self.log
 
