@@ -1,14 +1,14 @@
 PYTHON = python3
 NAME = main.py
+ARGS ?= maps/hard/03_ultimate_challenge.txt
 
 all: run
 
 install:
-	python -m pip install
-	python -m pip install mypy pygame
+	python -m pip install flake8 mypy pygame
 
 run:
-	$(PYTHON) $(NAME)
+	$(PYTHON) $(NAME) $(ARGS)
 
 debug:
 	$(PYTHON) -m pdb $(NAME)

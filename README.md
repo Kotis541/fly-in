@@ -14,11 +14,11 @@ The system handles various zone types:
 ## Instructions
  To set up and run the simulation, user the following Makefile command:
 ```bash
-make install    # Install dependencies (Pygame, MyPy, flake8)
-make run        # Run the simulation
-make lint       # Check code quality (flake8 + mypy)
-make debug      # Debug mode with pdb
-make clean      # Remove cache files
+make install                       # Install dependencies
+make run  or make run ARGS=...     # Run the simulation
+make lint                          # Check code quality
+make debug                         # Debug mode with pdb
+make clean                         # Remove cache files
 ```
 ### Map
 Maps are defined in .txt files with the following syntax:

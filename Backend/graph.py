@@ -11,6 +11,7 @@ class Connection:
         self.max_link_capacity = max_link_capacity
         self.node_a = node_a
         self.node_b = node_b
+        self.name = f"{node_a.name}-{node_b.name}"
         self.connection: list[int] = []
 
     def accept_drone(self, id: int) -> bool:

@@ -68,11 +68,13 @@ class Engine:
     def get_zone_cost(self, hub: Hub) -> float:
         """Returns the cost for a given hub based on its zone type."""
         if hub.z_type == "restricted":
-            return 2
+            return 2.0
         elif hub.z_type == "blocked":
             return float("inf")
+        elif hub.z_type == "priority":
+            return 0.9
         else:
-            return 1
+            return 1.0
 
     def find_conn(self, hub_a: Hub, hub_b: Hub) -> Connection:
         """Finds and returns the connection between two adjacent hubs."""
@@ -95,6 +97,7 @@ class Engine:
         while not all(drone.delivered for drone in self.drones):
             approved = []
             moves_this_turn = []
+            visual_moves_this_turn = []
 
             for drone in self.drones:
                 if drone.delivered:
@@ -110,24 +113,27 @@ class Engine:
             if not approved:
                 break
 
+            connections_to_release = []
+
             for drone, next_hub in approved:
                 current_hub = drone.path[drone.path_index]
                 connection = self.find_conn(current_hub, next_hub)
 
                 if drone.in_transit:
-                    drone.turns_in_transit -= 1
-                    if drone.turns_in_transit <= 0:
-                        # Musí TEĎKA dorazit!
+                    if drone.turns_in_transit > 0:
+                        drone.turns_in_transit -= 1
+                    if drone.turns_in_transit == 0:
                         if len(next_hub.drones) < next_hub.capacity:
                             next_hub.accept_drone(drone.drone_id)
                             drone.path_index += 1
                             drone.location = drone.path[drone.path_index]
                             drone.in_transit = False
+                            drone.transit_target = None
                             connection.release_drone(drone.drone_id)
-                        else:
-                            drone.turns_in_transit = 0
+                            moves_this_turn.append(f"{drone.name}-{next_hub.name}")
                 else:
-                    if (len(next_hub.drones) < next_hub.capacity and
+                    incoming = sum(1 for d in self.drones if d.in_transit and d.transit_target == next_hub)
+                    if (len(next_hub.drones) + incoming < next_hub.capacity and
                        len(connection.connection) <
                        connection.max_link_capacity):
 
@@ -135,10 +141,10 @@ class Engine:
                             current_hub.release_drone(drone.drone_id)
                             connection.accept_drone(drone.drone_id)
                             drone.in_transit = True
-                            drone.turns_in_transit = 2
+                            drone.turns_in_transit = 1
                             drone.transit_target = next_hub
-                            moves_this_turn.append(f"{drone.name}-"
-                                                   f"{next_hub.name}")
+                            moves_this_turn.append(f"{drone.name}-{connection.name}")
+                            visual_moves_this_turn.append(f"{drone.name}-{next_hub.name}")
                         else:
                             # Normální pohyb
                             current_hub.release_drone(drone.drone_id)
@@ -148,10 +154,16 @@ class Engine:
                             drone.location = drone.path[drone.path_index]
                             moves_this_turn.append(f"{drone.name}"
                                                    f"-{next_hub.name}")
-                            connection.release_drone(drone.drone_id)
+                            visual_moves_this_turn.append(f"{drone.name}"
+                                                          f"-{next_hub.name}")
+                            connections_to_release.append((connection, drone.drone_id))
+
+            for conn, d_id in connections_to_release:
+                conn.release_drone(d_id)
+
             if moves_this_turn:
                 self.log.append(" ".join(moves_this_turn))
-            self.visual_log.append(" ".join(moves_this_turn))
+                self.visual_log.append(" ".join(visual_moves_this_turn))
 
             self.turn += 1
         return self.log
