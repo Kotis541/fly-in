@@ -98,29 +98,33 @@ class Engine:
         
         shortest_distance = distances[end]
         if shortest_distance == float("inf"):
-            return [[start, end]]
+            raise RuntimeError(
+                f"[ERROR - ENGINE]: No path from {start.name} to {end.name}!"
+            )
         
         all_paths = []
         
-        def dfs(current: Hub, target: Hub, cost: float, path: list[Hub]) -> None:
-            if current == target and abs(cost) < 1e-6:
+        def dfs(current: Hub, target: Hub, path: list[Hub]) -> None:
+            if current == target:
                 all_paths.append(path[:])
-                return
-            if cost < -1e-6:
                 return
             
             for connection in current.connections:
                 neighbor = (connection.node_b if connection.node_a == current
                            else connection.node_a)
-                if neighbor not in path and neighbor.z_type != "blocked":
+                if neighbor.z_type != "blocked":
                     edge_cost = self.get_zone_cost(neighbor)
-                    if edge_cost - 1e-6 <= cost:
+                    if abs(distances[current] + edge_cost - distances[neighbor]) < 1e-6:
                         path.append(neighbor)
-                        dfs(neighbor, target, cost - edge_cost, path)
+                        dfs(neighbor, target, path)
                         path.pop()
         
-        dfs(start, end, shortest_distance, [start])
-        return all_paths if all_paths else [[start, end]]
+        dfs(start, end, [start])
+        if not all_paths:
+            raise RuntimeError(
+                f"[ERROR - ENGINE]: No path from {start.name} to {end.name}!"
+            )
+        return all_paths
 
     def get_zone_cost(self, hub: Hub) -> float:
         """Returns the cost for a given hub based on its zone type."""
@@ -162,12 +166,13 @@ class Engine:
                 if drone.delivered:
                     continue
 
+                if drone.location == self.map_obj.end_hub and not drone.in_transit:
+                    drone.delivered = True
+                    continue
+
                 if drone.path_index + 1 < len(drone.path):
                     next_hub = drone.path[drone.path_index + 1]
                     approved.append((drone, next_hub))
-
-                else:
-                    drone.delivered = True
 
             if not approved:
                 break
@@ -239,6 +244,9 @@ class Engine:
                 self.visual_log.append(" ".join(visual_moves_this_turn))
 
             self.turn += 1
+            if not moves_this_turn and not any(d.in_transit for d in self.drones):
+                raise RuntimeError("[ERROR - ENGINE]: Simulation deadlock detected!")
+
         return self.log
 
     def coord_scale(self, hub_x: int, hub_y: int, screen_w: int,

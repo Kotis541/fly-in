@@ -14,10 +14,10 @@ def main() -> None:
         exit(1)
     try:
         map_obj, drones = Parser.parse_file(sys.argv[1])
-    except (FileNotFoundError, ValueError) as e:
+        engine = Engine(map_obj, drones)
+    except (FileNotFoundError, ValueError, RuntimeError) as e:
         print(e)
         exit(1)
-    engine = Engine(map_obj, drones)
     log = engine.run_simulation()
     for line in log:
         print(line)

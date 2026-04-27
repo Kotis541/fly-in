@@ -78,7 +78,8 @@ class Visualizer:
             }
         if len(self.engine.visual_log) > 0:
             for move in self.engine.visual_log[0].split():
-                d_name, h_name = move.split("-")
+                parts = move.split("-", 1)
+                d_name, h_name = parts[0], parts[1]
                 self.visual_drones[d_name]['target_node'] = \
                     self.map.hubs[h_name]
 

@@ -52,10 +52,10 @@ class Parser:
 
     @staticmethod
     def parse_file(filepath: str) -> Tuple[Map, list[Drone]]:
-        """Parses the input file to construct and return the Map and
+        """Parses the input file to construct and return the map_obj and
         list of Drones.
         """
-        map = Map()
+        map_obj = Map()
         nb_drones = 0
         nb_drones_found = False
         seen_connection: set[frozenset[str]] = set()
@@ -93,6 +93,8 @@ class Parser:
                         meta_dict = Parser.parse_metadata(line, "hub")
 
                         capacity = int(meta_dict.get("max_drones", 1))
+                        if capacity <= 0:
+                            raise ValueError("[ERROR - PARSER]: max_drones must be positive")
                         z_type = meta_dict.get("zone", "normal")
                         color = meta_dict.get("color", None)
                     except ValueError as e:
@@ -102,18 +104,18 @@ class Parser:
 
                     hub = Hub(name=name, z_type=z_type, x=x, y=y,
                             capacity=capacity, color=color)
-                    map.add_hub(hub)
+                    map_obj.add_hub(hub)
 
                     if line.startswith("start_hub:"):
-                        if map.start_hub is not None:
+                        if map_obj.start_hub is not None:
                             raise ValueError("[ERROR - PARSER]: "
-                                             "Map cant have more than 1 start!")
-                        map.start_hub = hub
+                                             "map_obj cant have more than 1 start!")
+                        map_obj.start_hub = hub
                     elif line.startswith("end_hub:"):
-                        if map.end_hub is not None:
+                        if map_obj.end_hub is not None:
                             raise ValueError("[ERROR - PARSER]: "
-                                             "Map cant have more than 1 end!")
-                        map.end_hub = hub
+                                             "map_obj cant have more than 1 end!")
+                        map_obj.end_hub = hub
 
                 elif line.startswith("connection:"):
                     try:
@@ -124,41 +126,43 @@ class Parser:
 
                     a, b = parts[1].split("-")
                     capacity = int(meta_dict.get("max_link_capacity", 1))
-                    if a not in map.hubs or b not in map.hubs:
+                    if capacity <= 0:
+                        raise ValueError("[ERROR - PARSER]: max_drones must be positive")
+                    if a not in map_obj.hubs or b not in map_obj.hubs:
                         raise ValueError("[ERROR - PARSER]:"
                                          "Connection references unknown hub: "
                                          f"{a} or {b}")
                     if a == b:
                         raise ValueError("[ERROR - PARSER]: "
-                                         "Node {a} can't connect to itself")
+                                         f"Node {a} can't connect to itself")
                     conn_key = frozenset([a, b])
                     if conn_key in seen_connection:
                         raise ValueError(f"[ERROR - PARSER]: Duplicate connection between {a} and {b}")
                     seen_connection.add(conn_key)
-                    node_a = map.hubs[a]
-                    node_b = map.hubs[b]
+                    node_a = map_obj.hubs[a]
+                    node_b = map_obj.hubs[b]
 
                     new_connetion = Connection(node_a, node_b, capacity)
                     node_a.add_connection(new_connetion)
                     node_b.add_connection(new_connetion)
 
-            if map.start_hub is None:
+            if map_obj.start_hub is None:
                 raise ValueError("[ERROR - PARSER]: You didn't add start_hub!")
-            if map.end_hub is None:
+            if map_obj.end_hub is None:
                 raise ValueError("[ERROR - PARSER]: You didn't add end_hub!")
 
             if nb_drones <= 0:
                 raise ValueError("[ERROR - PARSER]: "
                                  f"Invalid number of drones ({nb_drones})")
 
-            map.start_hub.capacity = float('inf')
-            map.end_hub.capacity = float('inf')
+            map_obj.start_hub.capacity = float('inf')
+            map_obj.end_hub.capacity = float('inf')
 
             drones_list = []
             for i in range(1, nb_drones + 1):
                 name = f"D{i}"
-                drone = Drone(name, i, map.start_hub)
+                drone = Drone(name, i, map_obj.start_hub)
                 drones_list.append(drone)
-                map.start_hub.accept_drone(drone.drone_id)
+                map_obj.start_hub.accept_drone(drone.drone_id)
 
-            return map, drones_list
+            return map_obj, drones_list

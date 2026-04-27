@@ -15,7 +15,8 @@ The system handles various zone types:
  To set up and run the simulation, user the following Makefile command:
 ```bash
 make install                       # Install dependencies
-make run  or make run ARGS=...     # Run the simulation
+make run ARGS map_name or          # Run the simulation
+python3 main.py map_name   
 make lint                          # Check code quality
 make debug                         # Debug mode with pdb
 make clean                         # Remove cache files
