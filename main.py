@@ -6,13 +6,17 @@ import sys
 
 def main() -> None:
     """Runs the main simulation loop and launches the Pygame visualizer."""
+    if len(sys.argv) < 2:
+        print("[ERROR]: Usage: python3 main.py <map_file>")
+        exit(1)
+    if len(sys.argv) > 2:
+        print("[ERROR]: Too many arguments. Usage: python main.py <map_file>")
+        exit(1)
     try:
         map_obj, drones = Parser.parse_file(sys.argv[1])
-        if len(sys.argv) > 2:
-            raise ValueError("Cannot add more files!")
     except (FileNotFoundError, ValueError) as e:
         print(e)
-        exit()
+        exit(1)
     engine = Engine(map_obj, drones)
     log = engine.run_simulation()
     for line in log:

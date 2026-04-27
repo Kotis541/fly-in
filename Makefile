@@ -11,7 +11,7 @@ run:
 	$(PYTHON) $(NAME) $(ARGS)
 
 debug:
-	$(PYTHON) -m pdb $(NAME)
+	$(PYTHON) -m pdb $(NAME) $(ARGS)
 
 clean:
 	rm -rf Backend/__pycache__ Frontend/__pycache__ .mypy_cache

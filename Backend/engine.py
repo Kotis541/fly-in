@@ -65,6 +65,63 @@ class Engine:
         path.reverse()
         return path
 
+    def find_all_shortest_paths(self, start: Hub, end: Hub) -> list[list[Hub]]:
+        """Finds all shortest paths between start and end using Dijkstra
+        to determine distance, then DFS to enumerate all paths of that length.
+        """
+        distances = {}
+        visited: set[Hub] = set()
+        for hub in self.map_obj.hubs.values():
+            distances[hub] = float("inf")
+        distances[start] = 0
+        
+        while len(visited) < len(self.map_obj.hubs):
+            current = None
+            min_dist = float("inf")
+            
+            for hub in self.map_obj.hubs.values():
+                if hub not in visited and distances[hub] < min_dist:
+                    current = hub
+                    min_dist = distances[hub]
+            if current is None or current == end:
+                break
+            
+            for connection in current.connections:
+                neighbor = (connection.node_b if connection.node_a == current
+                           else connection.node_a)
+                if neighbor not in visited and neighbor.z_type != "blocked":
+                    cost = self.get_zone_cost(neighbor)
+                    new_dist = distances[current] + cost
+                    if new_dist < distances[neighbor]:
+                        distances[neighbor] = new_dist
+            visited.add(current)
+        
+        shortest_distance = distances[end]
+        if shortest_distance == float("inf"):
+            return [[start, end]]
+        
+        all_paths = []
+        
+        def dfs(current: Hub, target: Hub, cost: float, path: list[Hub]) -> None:
+            if current == target and abs(cost) < 1e-6:
+                all_paths.append(path[:])
+                return
+            if cost < -1e-6:
+                return
+            
+            for connection in current.connections:
+                neighbor = (connection.node_b if connection.node_a == current
+                           else connection.node_a)
+                if neighbor not in path and neighbor.z_type != "blocked":
+                    edge_cost = self.get_zone_cost(neighbor)
+                    if edge_cost - 1e-6 <= cost:
+                        path.append(neighbor)
+                        dfs(neighbor, target, cost - edge_cost, path)
+                        path.pop()
+        
+        dfs(start, end, shortest_distance, [start])
+        return all_paths if all_paths else [[start, end]]
+
     def get_zone_cost(self, hub: Hub) -> float:
         """Returns the cost for a given hub based on its zone type."""
         if hub.z_type == "restricted":
@@ -91,8 +148,10 @@ class Engine:
         end = self.map_obj.end_hub
         if start is None or end is None:
             return []
-        for drone in self.drones:
-            drone.path = self.find_path(start, end)
+
+        all_paths = self.find_all_shortest_paths(start, end)
+        for i, drone in enumerate(self.drones):
+            drone.path = all_paths[i % len(all_paths)]
 
         while not all(drone.delivered for drone in self.drones):
             approved = []
@@ -114,6 +173,7 @@ class Engine:
                 break
 
             connections_to_release = []
+            processed_drones = set()
 
             for drone, next_hub in approved:
                 current_hub = drone.path[drone.path_index]
@@ -131,8 +191,19 @@ class Engine:
                             drone.transit_target = None
                             connection.release_drone(drone.drone_id)
                             moves_this_turn.append(f"{drone.name}-{next_hub.name}")
+                            visual_moves_this_turn.append(f"{drone.name}-{next_hub.name}")
+                        else:
+                            raise RuntimeError(
+                                f"[ERROR - ENGINE]: Drone {drone.name} is forced to wait "
+                                f"on connection {connection.name}, violating spec!"
+                            )
                 else:
-                    incoming = sum(1 for d in self.drones if d.in_transit and d.transit_target == next_hub)
+                    incoming = sum(
+                        1 for d in self.drones 
+                        if d.in_transit 
+                        and d.transit_target == next_hub
+                        and d.turns_in_transit == 1 and d.drone_id not in processed_drones
+                    )
                     if (len(next_hub.drones) + incoming < next_hub.capacity and
                        len(connection.connection) <
                        connection.max_link_capacity):
@@ -157,6 +228,8 @@ class Engine:
                             visual_moves_this_turn.append(f"{drone.name}"
                                                           f"-{next_hub.name}")
                             connections_to_release.append((connection, drone.drone_id))
+
+                processed_drones.add(drone.drone_id)
 
             for conn, d_id in connections_to_release:
                 conn.release_drone(d_id)

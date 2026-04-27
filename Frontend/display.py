@@ -30,11 +30,15 @@ class Visualizer:
         self.info = pygame.display.Info()
         self.screen = self._create_screen()
 
-        # Load drone image with relative path
+        # Load drone image
         import os
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        icon_path = os.path.join(script_dir, "image/drone.png")
-        self.drone_img = pygame.image.load(icon_path)
+        try:
+            icon_path = os.path.join(script_dir, "image/drone.png")
+            self.drone_img = pygame.image.load(icon_path)
+        except (FileNotFoundError, pygame.error):
+            print("[ERROR - Visualizer]: Can't load drone img")
+            exit(1)
         self.drone = pygame.transform.scale(self.drone_img, (40, 20))
         pygame.display.set_caption("Fly-In Visualization")
 
